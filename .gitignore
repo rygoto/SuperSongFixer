@@ -1,0 +1,12 @@
+# 音源と生成した曲データ（著作権）
+songs/
+app/public/songs/
+
+# 依存とビルド成果物
+node_modules/
+app/dist/
+
+# Python
+tools/.venv/
+tools/out/
+__pycache__/

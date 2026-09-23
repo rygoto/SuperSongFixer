@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101418" />
+    <title>SongFixer</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>SongFixer</h1>
+        <span id="status" class="muted">マイクオフ</span>
+      </header>
+
+      <nav id="modes">
+        <button id="tab-lesson" class="on">音程練習</button>
+        <button id="tab-song">曲で練習</button>
+      </nav>
+
+      <section id="readout">
+        <div id="note">--</div>
+        <div id="solfege" class="muted">&nbsp;</div>
+        <div class="needle-track"><div class="needle-zone"></div><div id="needle"></div></div>
+        <div id="cents" class="muted">&nbsp;</div>
+      </section>
+
+      <canvas id="graph"></canvas>
+      <div id="phase" class="muted">&nbsp;</div>
+
+      <section id="actions">
+        <button id="mic" class="primary">マイクをオンにする</button>
+        <button id="new" class="primary" hidden>出題</button>
+        <button id="again" hidden>もう一回</button>
+      </section>
+
+      <div id="view-lesson">
+        <section id="result" hidden></section>
+
+        <details id="settings">
+          <summary>設定</summary>
+          <label>音の数
+            <select id="count"><option value="1">1音</option><option value="2">2音</option><option value="3">3音</option></select>
+          </label>
+          <label>下限 <select id="lo"></select></label>
+          <label>上限 <select id="hi"></select></label>
+          <label>判定
+            <select id="tol">
+              <option value="50">やさしい（±50セント）</option>
+              <option value="35">ふつう（±35セント）</option>
+              <option value="20">きびしい（±20セント）</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="octave" /> オクターブ違いも正解にする</label>
+        </details>
+      </div>
+
+      <div id="view-song" hidden>
+        <section id="song-pick">
+          <select id="songsel"></select>
+          <button id="songload" class="primary">読み込む</button>
+          <div id="songmsg" class="muted small">&nbsp;</div>
+        </section>
+
+        <section id="transport" hidden>
+          <div id="seekwrap">
+            <div id="loopbar" hidden></div>
+            <input type="range" id="seek" min="0" max="1000" value="0" />
+          </div>
+          <div id="times" class="muted small"><span id="tnow">0:00</span> / <span id="tend">0:00</span></div>
+
+          <div class="row">
+            <button id="play" class="primary">再生</button>
+            <button id="prevPhrase">◀</button>
+            <button id="loopPhrase">このフレーズをループ</button>
+            <button id="nextPhrase">▶</button>
+          </div>
+          <div class="row">
+            <button id="markA">ここからA</button>
+            <button id="markB">ここまでB</button>
+            <button id="loopClear">ループ解除</button>
+          </div>
+
+          <label class="check" id="selftest-row">
+            <input type="checkbox" id="selftest" /> セルフテスト（お手本ボーカル自身を採点する）
+          </label>
+          <p class="muted small">耳で確かめなくても、ここが高得点なら譜面・再生・採点のタイミングが合っています。90点未満ならどこかがズレています。</p>
+
+          <div id="live"></div>
+          <section id="song-result" hidden></section>
+
+          <details id="song-settings">
+            <summary>曲の設定</summary>
+            <label>キー <input type="range" id="key" min="-6" max="6" step="1" value="0" /><output id="keyval">±0</output></label>
+            <p class="muted small">キーを変えると同じだけテンポも変わります（ピッチだけ変える処理は未実装）。</p>
+            <label>お手本ボーカル <input type="range" id="guide" min="0" max="100" value="0" /><output id="guideval">0%</output></label>
+            <label>オケ音量 <input type="range" id="vol" min="0" max="100" value="80" /><output id="volval">80%</output></label>
+            <label>遅延補正 <input type="range" id="latency" min="0" max="400" step="10" value="120" /><output id="latval">120ms</output></label>
+            <p class="muted small">歌ったつもりより判定が遅れて見えるときに上げます。</p>
+          </details>
+        </section>
+      </div>
+
+      <p class="muted small">有線イヤホン推奨。スピーカーだとお手本の音をマイクが拾います。</p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
