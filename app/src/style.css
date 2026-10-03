@@ -64,8 +64,10 @@ h1 { font-size: 18px; margin: 0; letter-spacing: 0.02em; }
 #phase { text-align: center; min-height: 1.4em; font-weight: 600; color: var(--accent); }
 
 #actions { display: flex; gap: 10px; }
-button {
+button, label.button {
   flex: 1;
+  text-align: center;
+  cursor: pointer;
   font: inherit;
   font-size: 17px;
   font-weight: 600;
@@ -101,7 +103,7 @@ select { font: inherit; background: var(--bg); color: var(--text); border: 1px s
 #view-lesson, #view-song { display: flex; flex-direction: column; gap: 12px; }
 #song-pick { display: grid; grid-template-columns: 1fr auto; gap: 8px 10px; align-items: center; }
 #song-pick select { max-width: 100%; }
-#song-pick #songmsg { grid-column: 1 / -1; }
+#song-pick #songmsg, #song-manage { grid-column: 1 / -1; }
 #songsel { padding: 12px 8px; }
 
 #transport { display: flex; flex-direction: column; gap: 10px; }
@@ -114,7 +116,7 @@ select { font: inherit; background: var(--bg); color: var(--text); border: 1px s
 #times { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
 
 .row { display: flex; gap: 8px; }
-.row button { font-size: 15px; padding: 12px 8px; }
+.row button, .row label.button { font-size: 15px; padding: 12px 8px; }
 #prevPhrase, #nextPhrase { flex: 0 0 56px; }
 
 #live { text-align: center; font-weight: 600; min-height: 1.4em; font-variant-numeric: tabular-nums; }

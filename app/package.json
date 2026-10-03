@@ -13,6 +13,7 @@
     "vite": "^8.3.0"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "pitchy": "^4.1.0"
   }
 }

@@ -1,4 +1,5 @@
 import type { Target } from "./lesson";
+import type { StoredSong } from "./library";
 import { centsOff, foldToward } from "./notes";
 
 export type Note = { t: number; d: number; m: number };
@@ -10,25 +11,34 @@ export type SongData = SongEntry & {
 };
 export type LoadedSong = SongData & { backing: AudioBuffer; vocals: AudioBuffer | null };
 
-async function buffer(ctx: AudioContext, url: string): Promise<AudioBuffer> {
+async function bytes(url: string): Promise<ArrayBuffer> {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`${url} が読めません`);
-  return ctx.decodeAudioData(await r.arrayBuffer());
+  return r.arrayBuffer();
 }
 
+/** Songs served from app/public/songs. Only the dev server has any; the deployed site has none. */
 export async function loadIndex(): Promise<SongEntry[]> {
   const r = await fetch("songs/index.json");
-  if (!r.ok) return [];
+  if (!r.ok || !r.headers.get("content-type")?.includes("json")) return [];
   return r.json();
 }
 
-export async function loadSong(ctx: AudioContext, id: string): Promise<LoadedSong> {
+export async function fetchSong(id: string): Promise<StoredSong> {
   const [meta, backing, vocals] = await Promise.all([
     fetch(`songs/${id}/song.json`).then((r) => r.json() as Promise<SongData>),
-    buffer(ctx, `songs/${id}/backing.mp3`),
-    buffer(ctx, `songs/${id}/vocals.mp3`).catch(() => null),
+    bytes(`songs/${id}/backing.mp3`),
+    bytes(`songs/${id}/vocals.mp3`).catch(() => null),
   ]);
-  return { ...meta, backing, vocals };
+  return { meta, backing, vocals };
+}
+
+export async function decodeSong(ctx: AudioContext, s: StoredSong): Promise<LoadedSong> {
+  const [backing, vocals] = await Promise.all([
+    ctx.decodeAudioData(s.backing),
+    s.vocals ? ctx.decodeAudioData(s.vocals).catch(() => null) : null,
+  ]);
+  return { ...s.meta, backing, vocals };
 }
 
 /**

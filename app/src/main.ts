@@ -2,7 +2,8 @@ import { PitchGraph, type Point } from "./graph";
 import { Lesson, makeQuestion, type Target } from "./lesson";
 import { centsOff, noteName, solfege } from "./notes";
 import { PitchTracker } from "./pitch";
-import { loadIndex, loadSong, phraseBounds, SongPlayer, SongScorer, type SongEntry } from "./song";
+import { importFiles, listLocal, readLocal, removeLocal } from "./library";
+import { decodeSong, fetchSong, loadIndex, phraseBounds, SongPlayer, SongScorer } from "./song";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -15,6 +16,7 @@ const ui = {
   tabLesson: $<HTMLButtonElement>("tab-lesson"), tabSong: $<HTMLButtonElement>("tab-song"),
   viewLesson: $("view-lesson"), viewSong: $("view-song"),
   songsel: $<HTMLSelectElement>("songsel"), songload: $<HTMLButtonElement>("songload"), songmsg: $("songmsg"),
+  songfile: $<HTMLInputElement>("songfile"), songdel: $<HTMLButtonElement>("songdel"),
   transport: $("transport"), seek: $<HTMLInputElement>("seek"), loopbar: $("loopbar"),
   tnow: $("tnow"), tend: $("tend"), play: $<HTMLButtonElement>("play"),
   prevPhrase: $<HTMLButtonElement>("prevPhrase"), nextPhrase: $<HTMLButtonElement>("nextPhrase"),
@@ -180,21 +182,69 @@ function selfTest(): PitchTracker | undefined {
 }
 ui.selftest.addEventListener("change", () => { resetScorer(); });
 
-loadIndex().then((list: SongEntry[]) => {
+// Option values are "local:<id>" for songs saved on this device, "server:<id>" for the dev server's.
+async function refreshSongs(select?: string) {
+  const [local, server] = await Promise.all([
+    listLocal().catch(() => []),
+    loadIndex().catch(() => []),
+  ]);
+  const have = new Set(local.map((s) => s.id));
   ui.songsel.replaceChildren();
-  for (const s of list) ui.songsel.add(new Option(`${s.title}${s.artist ? ` / ${s.artist}` : ""}`, s.id));
-  ui.songmsg.textContent = list.length ? "" : "曲がありません。tools/prepare_song.py で作ってください。";
-  ui.songload.disabled = !list.length;
-}).catch(() => { ui.songmsg.textContent = "曲一覧を読めませんでした"; });
+  const label = (s: { title: string; artist: string }) => `${s.title}${s.artist ? ` / ${s.artist}` : ""}`;
+  for (const s of local) ui.songsel.add(new Option(label(s), `local:${s.id}`));
+  for (const s of server) if (!have.has(s.id)) ui.songsel.add(new Option(`${label(s)}（PC）`, `server:${s.id}`));
+  if (select) ui.songsel.value = select;
+  const empty = !ui.songsel.options.length;
+  ui.songmsg.textContent = empty ? "曲がありません。「曲を追加」で tools/pack_song.py の zip を選んでください。" : "";
+  ui.songload.disabled = empty;
+  syncDeleteButton();
+}
+function syncDeleteButton() {
+  ui.songdel.disabled = !ui.songsel.value.startsWith("local:");
+}
+ui.songsel.addEventListener("change", syncDeleteButton);
+void refreshSongs();
+
+ui.songfile.addEventListener("change", async () => {
+  const files = [...(ui.songfile.files ?? [])];
+  ui.songfile.value = "";
+  if (!files.length) return;
+  ui.songmsg.textContent = "追加中…";
+  try {
+    const s = await importFiles(files);
+    await refreshSongs(`local:${s.id}`);
+    ui.songmsg.textContent = `「${s.title}」をこの端末に保存しました`;
+  } catch (e) {
+    ui.songmsg.textContent = `追加できませんでした：${e instanceof Error ? e.message : e}`;
+    console.error(e);
+  }
+});
+
+ui.songdel.onclick = async () => {
+  const opt = ui.songsel.selectedOptions[0];
+  if (!opt?.value.startsWith("local:")) return;
+  // Two taps instead of confirm(): a native dialog would block the page.
+  if (ui.songdel.dataset.armed !== opt.value) {
+    ui.songdel.dataset.armed = opt.value;
+    ui.songdel.textContent = "もう一度押すと削除";
+    setTimeout(() => { delete ui.songdel.dataset.armed; ui.songdel.textContent = "この曲を削除"; }, 3000);
+    return;
+  }
+  delete ui.songdel.dataset.armed;
+  ui.songdel.textContent = "この曲を削除";
+  await removeLocal(opt.value.slice("local:".length));
+  await refreshSongs();
+  ui.songmsg.textContent = `「${opt.text}」を削除しました`;
+};
 
 ui.songload.onclick = async () => {
-  const id = ui.songsel.value;
+  const [where, id] = ui.songsel.value.split(/:(.*)/);
   ui.songload.disabled = true;
   ui.songmsg.textContent = "読み込み中…";
   try {
     player?.stop();
     const ac = audio();
-    const song = await loadSong(ac, id);
+    const song = await decodeSong(ac, where === "local" ? await readLocal(id) : await fetchSong(id));
     player = new SongPlayer(ac, song);
     phrases = phraseBounds(song.notes);
     ui.tend.textContent = mmss(song.duration);

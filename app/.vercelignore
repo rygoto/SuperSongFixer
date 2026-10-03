@@ -1,0 +1,2 @@
+# 曲データは公開しない（Git 経由でなく vercel CLI で直接デプロイしたときの保険）
+public/songs/

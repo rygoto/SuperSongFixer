@@ -6,7 +6,8 @@ Writes to app/public/songs/<id>/:
     backing.mp3   the song with vocals removed (karaoke track)
     vocals.mp3    the separated vocal, for an optional guide voice
     song.json     reference melody as notes plus the raw pitch curve
-and adds the song to app/public/songs/index.json.
+and adds the song to app/public/songs/index.json, then packs it into
+songs/packs/<id>.zip for the phone (see pack_song.py).
 """
 
 import argparse
@@ -22,6 +23,7 @@ import torchaudio.functional as AF
 import torchcrepe
 from demucs.apply import apply_model
 from demucs.pretrained import get_model
+from pack_song import pack
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_ROOT = ROOT / "app" / "public" / "songs"
@@ -250,6 +252,7 @@ def main() -> None:
     index.append({"id": args.id, "title": args.title, "artist": args.artist})
     index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"done in {time.time() - t0:.1f}s -> {out}")
+    print(f"phone pack: {pack(args.id)}")
 
 
 if __name__ == "__main__":

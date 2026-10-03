@@ -60,6 +60,10 @@
         <section id="song-pick">
           <select id="songsel"></select>
           <button id="songload" class="primary">読み込む</button>
+          <div class="row" id="song-manage">
+            <label class="button" id="songadd">曲を追加<input type="file" id="songfile" accept=".zip,application/zip,.json,.mp3,audio/mpeg" multiple hidden /></label>
+            <button id="songdel">この曲を削除</button>
+          </div>
           <div id="songmsg" class="muted small">&nbsp;</div>
         </section>
 
